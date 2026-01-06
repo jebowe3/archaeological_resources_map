@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Leaflet Splash Layout</title>
+
+    <!-- Leaflet -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <!-- Load jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+      :root {
+        --bg0: #070a12;
+        --bg1: rgba(255, 255, 255, 0.06);
+        --bg2: rgba(255, 255, 255, 0.1);
+        --stroke: rgba(255, 255, 255, 0.14);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.65);
+        --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        --radius-xl: 22px;
+        --radius-lg: 16px;
+        --radius-md: 12px;
+        --accent: #7c3aed; /* purple */
+        --accent2: #22d3ee; /* cyan */
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial;
+        color: var(--text);
+        background: radial-gradient(
+            1200px 700px at 20% 10%,
+            rgba(124, 58, 237, 0.25),
+            transparent 55%
+          ),
+          radial-gradient(
+            1000px 600px at 80% 30%,
+            rgba(34, 211, 238, 0.18),
+            transparent 55%
+          ),
+          linear-gradient(180deg, #050711 0%, #070a12 60%, #060812 100%);
+      }
+
+      /* Full-page shell */
+      .app {
+        height: 100%;
+        display: grid;
+        grid-template-rows: 10vh 1fr; /* header is top 10% */
+        gap: 18px;
+        padding: 18px;
+      }
+
+      /* Header bar */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-radius: var(--radius-xl);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.1),
+          rgba(255, 255, 255, 0.04)
+        );
+        border: 1px solid var(--stroke);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        box-shadow: 0 10px 30px rgba(124, 58, 237, 0.25);
+        position: relative;
+        flex: 0 0 auto;
+      }
+      .logo:after {
+        content: "";
+        position: absolute;
+        inset: 9px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+      }
+
+      .title-wrap {
+        min-width: 0;
+      }
+      .title {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .subtitle {
+        margin: 2px 0 0 0;
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 0 0 auto;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--stroke);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .btn {
+        border: 1px solid var(--stroke);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.08s ease, background 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.22);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      /* Main split layout */
+      .main {
+        display: grid;
+        grid-template-columns: 25% 75%;
+        gap: 18px;
+        min-height: 0; /* allows children to size properly */
+      }
+
+      /* Left form panel */
+      .panel {
+        border-radius: var(--radius-xl);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.08),
+          rgba(255, 255, 255, 0.04)
+        );
+        border: 1px solid var(--stroke);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        padding: 16px;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .panel h2 {
+        margin: 0 0 6px 0;
+        font-size: 14px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.78);
+      }
+      .panel p {
+        margin: 0 0 14px 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      /* instead of label { ... } */
+      .panel label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.75);
+      }
+
+      /* instead of input, select, textarea { ... } */
+      .panel input,
+      .panel select,
+      .panel textarea {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text);
+        padding: 10px 12px;
+        outline: none;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: rgba(124, 58, 237, 0.65);
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 88px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .primary {
+        background: linear-gradient(
+          135deg,
+          rgba(124, 58, 237, 0.95),
+          rgba(34, 211, 238, 0.85)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .hint {
+        margin-top: 14px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        line-height: 1.4;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      /* Map card */
+      .map-card {
+        border-radius: var(--radius-xl);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--stroke);
+        box-shadow: var(--shadow);
+        overflow: hidden; /* keeps map corners rounded */
+        min-height: 0;
+        position: relative;
+      }
+
+      /* Leaflet div must have explicit size */
+      #map {
+        height: 100%;
+        width: 100%;
+      }
+
+      .leaflet-control-layers {
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .leaflet-control-layers label {
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .leaflet-control-layers-separator {
+        border-top: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      /* Responsive: stack on narrow screens */
+      @media (max-width: 980px) {
+        .app {
+          grid-template-rows: auto 1fr;
+        }
+        .main {
+          grid-template-columns: 1fr;
+        }
+        .map-card {
+          min-height: 52vh;
+        }
+      }
+
+      /* Prevent browser focus rectangle around clicked SVG features */
+      .leaflet-interactive:focus,
+      .leaflet-interactive:focus-visible {
+        outline: none !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div class="title-wrap">
+            <p class="title">Archaeological Map</p>
+            <p class="subtitle">
+              Leaflet basemap + input panel (splash layout)
+            </p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="pill" title="Status">
+            <span
+              style="
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 999px;
+                background: rgba(34, 211, 238, 0.9);
+                box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+              "
+            ></span>
+            Ready
+          </div>
+          <button class="btn" id="btnResetView" type="button">
+            Reset View
+          </button>
+        </div>
+      </header>
+
+      <main class="main">
+        <aside class="panel">
+          <h2>Inputs</h2>
+          <p>
+            Use this panel for filters, layer toggles, search, or query
+            parameters.
+          </p>
+
+          <form id="controls">
+            <div class="field">
+              <label for="place">Name / Label</label>
+              <input
+                id="place"
+                name="place"
+                type="text"
+                placeholder="e.g., 'American Historical Society'"
+              />
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label for="lat">Latitude</label>
+                <input
+                  id="lat"
+                  name="lat"
+                  type="number"
+                  step="any"
+                  placeholder="Click map…"
+                  readonly
+                />
+              </div>
+              <div class="field">
+                <label for="lng">Longitude</label>
+                <input
+                  id="lng"
+                  name="lng"
+                  type="number"
+                  step="any"
+                  placeholder="Click map…"
+                  readonly
+                />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="desc">Description</label>
+              <textarea
+                id="desc"
+                name="desc"
+                placeholder="Optional description..."
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="photo">Image</label>
+              <input id="photo" name="photo" type="file" accept="image/*" />
+            </div>
+
+            <div class="field">
+              <label for="url">URL</label>
+              <input
+                id="url"
+                name="url"
+                type="url"
+                placeholder="https://example.com"
+              />
+            </div>
+
+            <div class="actions">
+              <button class="btn primary" type="submit">Submit</button>
+              <button class="btn" type="button" id="btnClear">Clear</button>
+            </div>
+
+            <div class="hint">
+              Tip: Click the map to capture coordinates, then fill out the
+              details and hit <b>Submit</b>.
+            </div>
+          </form>
+        </aside>
+        <section class="map-card">
+          <div id="map" role="application" aria-label="Leaflet map"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // Define North Carolina bounds
+      const northCarolinaBounds = [
+        [33.84, -84.32], // Southwest
+        [36.59, -75.46], // Northeast
+      ];
+
+      // Set the initial view to the North Carolina bounds above
+      const map = L.map("map", { zoomControl: true }).fitBounds(
+        northCarolinaBounds
+      );
+
+      // Basemap (Carto Voyager)
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: "abcd",
+          maxZoom: 20,
+        }
+      ).addTo(map);
+
+      // Layer for user inputs
+      const userInputsLayer = L.layerGroup().addTo(map);
+
+      // Parse CSV and add markers
+      function parseCsv(text) {
+        const rows = [];
+        let row = [];
+        let cur = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          const next = text[i + 1];
+
+          if (ch === '"' && inQuotes && next === '"') {
+            cur += '"'; // escaped quote
+            i++;
+          } else if (ch === '"') {
+            inQuotes = !inQuotes;
+          } else if (ch === "," && !inQuotes) {
+            row.push(cur);
+            cur = "";
+          } else if ((ch === "\n" || ch === "\r") && !inQuotes) {
+            if (ch === "\r" && next === "\n") i++;
+            row.push(cur);
+            cur = "";
+            // ignore completely empty lines
+            if (row.some((v) => v.trim() !== "")) rows.push(row);
+            row = [];
+          } else {
+            cur += ch;
+          }
+        }
+        // last field
+        if (cur.length || row.length) {
+          row.push(cur);
+          if (row.some((v) => v.trim() !== "")) rows.push(row);
+        }
+        return rows;
+      }
+
+      // Marker loading logic
+      function escapeHtml(str) {
+        return String(str ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      async function loadUserInputsFromCsv() {
+        userInputsLayer.clearLayers();
+
+        // Cache-bust so you see updates immediately after submit
+        const res = await fetch(`/layers/user_inputs.csv?ts=${Date.now()}`);
+        if (!res.ok) {
+          console.warn("Could not load user_inputs.csv");
+          return;
+        }
+
+        const text = await res.text();
+        const rows = parseCsv(text);
+        if (rows.length < 2) return;
+
+        const header = rows[0].map((h) => h.trim().toLowerCase());
+        const idx = (col) => header.indexOf(col);
+
+        const iName = idx("name");
+        const iDesc = idx("description");
+        const iImg = idx("image");
+        const iUrl = idx("url");
+        const iLat = idx("latitude");
+        const iLng = idx("longitude");
+
+        for (let r = 1; r < rows.length; r++) {
+          const cols = rows[r];
+
+          const lat = parseFloat(cols[iLat]);
+          const lng = parseFloat(cols[iLng]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+          const name = iName >= 0 ? cols[iName] || "" : "";
+          const desc = iDesc >= 0 ? cols[iDesc] || "" : "";
+          const img = iImg >= 0 ? cols[iImg] || "" : "";
+          const url = iUrl >= 0 ? cols[iUrl] || "" : "";
+
+          let popup = "";
+          if (name)
+            popup += `<div style="font-weight:700;margin-bottom:4px;">${escapeHtml(
+              name
+            )}</div>`;
+          if (desc)
+            popup += `<div style="opacity:.85;margin-bottom:8px;">${escapeHtml(
+              desc
+            )}</div>`;
+
+          if (url) {
+            const safeUrl = escapeHtml(url);
+            popup += `<div style="margin-bottom:8px;">
+                  <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Open link</a>
+                </div>`;
+          }
+
+          // image column stores filename saved by server
+          if (img) {
+            const safeImg = encodeURIComponent(img).replaceAll("%2F", "/");
+            popup += `<img src="/images/${safeImg}"
+                      alt="Uploaded image"
+                      style="width:100%;max-width:240px;border-radius:12px;border:1px solid rgba(0,0,0,0.15);display:block;" />`;
+          }
+
+          const m = L.marker([lat, lng]).addTo(userInputsLayer);
+          if (popup) m.bindPopup(popup);
+        }
+      }
+
+      // --- Click on map to add latitude and longitude ---
+      function setLatLngFields(latlng) {
+        document.getElementById("lat").value = latlng.lat.toFixed(6);
+        document.getElementById("lng").value = latlng.lng.toFixed(6);
+      }
+
+      map.on("click", (e) => {
+        const { latlng } = e;
+
+        // Update form fields
+        setLatLngFields(latlng);
+      });
+
+      function resetView() {
+        map.fitBounds(northCarolinaBounds, { animate: true });
+      }
+
+      document
+        .getElementById("btnResetView")
+        .addEventListener("click", resetView);
+
+      // --- Form behavior ---
+      const form = document.getElementById("controls");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const name = (document.getElementById("place").value || "").trim();
+        const description = (
+          document.getElementById("desc").value || ""
+        ).trim();
+        const latitude = parseFloat(document.getElementById("lat").value);
+        const longitude = parseFloat(document.getElementById("lng").value);
+        const photoInput = document.getElementById("photo");
+        const photo =
+          photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
+        const url = (document.getElementById("url").value || "").trim();
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          alert("Click on the map to set Latitude/Longitude first.");
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append("name", name);
+        fd.append("description", description);
+        fd.append("latitude", String(latitude));
+        fd.append("longitude", String(longitude));
+        if (photo) fd.append("image", photo);
+        fd.append("url", url);
+
+        try {
+          const res = await fetch("/submit", { method: "POST", body: fd });
+          if (!res.ok) throw new Error(await res.text());
+
+          // Refresh markers
+          await loadUserInputsFromCsv();
+
+          const out = await res.json(); // { ok:true, imageFile:"...", row:{...} }
+          alert("Saved!");
+
+          // Optional: clear form (keep lat/lng if you want)
+          // form.reset(); document.getElementById("lat").value=""; document.getElementById("lng").value="";
+        } catch (err) {
+          console.error(err);
+          alert("Save failed: " + err.message);
+        }
+      });
+
+      document.getElementById("btnClear").addEventListener("click", () => {
+        form.reset();
+      });
+
+      // Ensure the map sizes correctly if fonts/layout cause late reflow
+      window.addEventListener("load", () =>
+        setTimeout(() => map.invalidateSize(), 0)
+      );
+      window.addEventListener("resize", () => map.invalidateSize());
+
+      // Load nc_counties.geojson data with jQuery and add to map
+      $.when(
+        $.getJSON("layers/nc_counties.geojson"),
+        $.getJSON("layers/nc_regions.geojson")
+      ).done(function (counties, regions) {
+        const countyBorders = L.geoJSON(counties[0], {
+          style: function (feature) {
+            return {
+              color: "#6fa8dc",
+              weight: 1,
+              opacity: 0.5,
+              fillOpacity: 0.0,
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            // On mouseover, highlight the county and show a tooltip with its name
+            layer.on("mouseover", function (e) {
+              this.setStyle({
+                color: "#6fa8dc",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.0,
+              });
+              this.bindTooltip(feature.properties.NAME_LOCAS + " County", {
+                permanent: false,
+                sticky: true,
+                direction: "right",
+                className: "county-tooltip",
+              }).openTooltip();
+            });
+            // On mouseout, reset the style and close the tooltip
+            layer.on("mouseout", function (e) {
+              countyBorders.resetStyle(this);
+              this.closeTooltip();
+            });
+          },
+        });
+
+        // Add region borders
+        const regionBorders = L.geoJSON(regions[0], {
+          style: function (feature) {
+            return {
+              color: "#000000",
+              weight: 1,
+              opacity: 0.5,
+              fillOpacity: 0.0,
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            // On mouseover, highlight the region and show a tooltip with its name
+            layer.on("mouseover", function (e) {
+              this.setStyle({
+                color: "#000000",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.0,
+              });
+              this.bindTooltip(feature.properties.REGION, {
+                permanent: false,
+                sticky: true,
+                direction: "right",
+                className: "region-tooltip",
+              }).openTooltip();
+            });
+            // On mouseout, reset the style and close the tooltip
+            layer.on("mouseout", function (e) {
+              regionBorders.resetStyle(this);
+              this.closeTooltip();
+            });
+          },
+        }).addTo(map);
+
+        // Add a radio button control to toggle layers
+        const layers = {
+          Regions: regionBorders,
+          Counties: countyBorders,
+        };
+        L.control
+          .layers(layers, null, { collapsed: false, position: "topright" })
+          .addTo(map);
+      });
+
+      loadUserInputsFromCsv();
+    </script>
+  </body>
+</html>
