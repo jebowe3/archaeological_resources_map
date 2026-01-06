@@ -415,8 +415,14 @@
             </div>
 
             <div class="field">
-              <label for="photo">Image</label>
-              <input id="photo" name="photo" type="file" accept="image/*" />
+              <label for="image">Image URL</label>
+              <input
+                id="image"
+                name="image"
+                type="url"
+                placeholder="https://example.com/photo.jpg"
+              />
+              <img id="imagePreview" style="display:none;width:100%;border-radius:12px;margin-top:10px;" />
             </div>
 
             <div class="field">
@@ -472,7 +478,22 @@
       // Layer for user inputs
       const userInputsLayer = L.layerGroup().addTo(map);
 
-      // Parse CSV and add markers
+      // Google Sheet API URL
+      const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyxlBAAus8aMU8kU6L8db_WmBb73-CLaaC1miDCisikoK7kAXekS93gaN08Eoyg5mK4/exec";
+
+      // Published Google Sheet
+      const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTA-4Z6e7vHpirRLmqjjdttCmuoqPrq2oFFOzM05_EHhGJpGEY8opCEC6Tt0BfbIp8qTi9c5O0PlZyc/pub?gid=0&single=true&output=csv";
+
+      // Marker loading logic
+      function escapeHtml(str) {
+        return String(str || "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
       function parseCsv(text) {
         const rows = [];
         let row = [];
@@ -484,7 +505,7 @@
           const next = text[i + 1];
 
           if (ch === '"' && inQuotes && next === '"') {
-            cur += '"'; // escaped quote
+            cur += '"';
             i++;
           } else if (ch === '"') {
             inQuotes = !inQuotes;
@@ -494,39 +515,28 @@
           } else if ((ch === "\n" || ch === "\r") && !inQuotes) {
             if (ch === "\r" && next === "\n") i++;
             row.push(cur);
-            cur = "";
-            // ignore completely empty lines
-            if (row.some((v) => v.trim() !== "")) rows.push(row);
+            if (row.some(v => v.trim() !== "")) rows.push(row);
             row = [];
+            cur = "";
           } else {
             cur += ch;
           }
         }
-        // last field
+
         if (cur.length || row.length) {
           row.push(cur);
-          if (row.some((v) => v.trim() !== "")) rows.push(row);
+          if (row.some(v => v.trim() !== "")) rows.push(row);
         }
+
         return rows;
       }
 
-      // Marker loading logic
-      function escapeHtml(str) {
-        return String(str ?? "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
-
-      async function loadUserInputsFromCsv() {
+      async function loadUserInputsFromSheet() {
         userInputsLayer.clearLayers();
 
-        // Cache-bust so you see updates immediately after submit
-        const res = await fetch(`/layers/user_inputs.csv?ts=${Date.now()}`);
+        const res = await fetch(`${SHEET_CSV_URL}&ts=${Date.now()}`); // cache-bust
         if (!res.ok) {
-          console.warn("Could not load user_inputs.csv");
+          console.warn("Could not load published CSV:", res.status);
           return;
         }
 
@@ -534,15 +544,15 @@
         const rows = parseCsv(text);
         if (rows.length < 2) return;
 
-        const header = rows[0].map((h) => h.trim().toLowerCase());
-        const idx = (col) => header.indexOf(col);
+        const header = rows[0].map(h => (h || "").trim().toLowerCase());
+        const idx = (c) => header.indexOf(c);
 
         const iName = idx("name");
         const iDesc = idx("description");
-        const iImg = idx("image");
-        const iUrl = idx("url");
-        const iLat = idx("latitude");
-        const iLng = idx("longitude");
+        const iImg  = idx("image");
+        const iUrl  = idx("url");
+        const iLat  = idx("latitude");
+        const iLng  = idx("longitude");
 
         for (let r = 1; r < rows.length; r++) {
           const cols = rows[r];
@@ -553,38 +563,33 @@
 
           const name = iName >= 0 ? cols[iName] || "" : "";
           const desc = iDesc >= 0 ? cols[iDesc] || "" : "";
-          const img = iImg >= 0 ? cols[iImg] || "" : "";
-          const url = iUrl >= 0 ? cols[iUrl] || "" : "";
+          const img  = iImg  >= 0 ? cols[iImg]  || "" : "";
+          const url  = iUrl  >= 0 ? cols[iUrl]  || "" : "";
 
           let popup = "";
-          if (name)
-            popup += `<div style="font-weight:700;margin-bottom:4px;">${escapeHtml(
-              name
-            )}</div>`;
-          if (desc)
-            popup += `<div style="opacity:.85;margin-bottom:8px;">${escapeHtml(
-              desc
-            )}</div>`;
-
-          if (url) {
-            const safeUrl = escapeHtml(url);
-            popup += `<div style="margin-bottom:8px;">
-                  <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">Open link</a>
-                </div>`;
-          }
-
-          // image column stores filename saved by server
-          if (img) {
-            const safeImg = encodeURIComponent(img).replaceAll("%2F", "/");
-            popup += `<img src="/images/${safeImg}"
-                      alt="Uploaded image"
-                      style="width:100%;max-width:240px;border-radius:12px;border:1px solid rgba(0,0,0,0.15);display:block;" />`;
-          }
+          if (name) popup += `<div style="font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>`;
+          if (desc) popup += `<div style="opacity:.85;margin-bottom:8px;">${escapeHtml(desc)}</div>`;
+          if (url)  popup += `<div style="margin-bottom:8px;"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open link</a></div>`;
+          if (img)  popup += `<img src="${escapeHtml(img)}" style="width:100%;max-width:240px;border-radius:12px;display:block;" />`;
 
           const m = L.marker([lat, lng]).addTo(userInputsLayer);
           if (popup) m.bindPopup(popup);
         }
       }
+
+      const imageInput = document.getElementById("image");
+      const imagePreview = document.getElementById("imagePreview");
+
+      imageInput.addEventListener("input", () => {
+        const u = (imageInput.value || "").trim();
+        if (!u) {
+          imagePreview.style.display = "none";
+          imagePreview.src = "";
+          return;
+        }
+        imagePreview.src = u;
+        imagePreview.style.display = "block";
+      });
 
       // --- Click on map to add latitude and longitude ---
       function setLatLngFields(latlng) {
@@ -592,11 +597,16 @@
         document.getElementById("lng").value = latlng.lng.toFixed(6);
       }
 
-      map.on("click", (e) => {
-        const { latlng } = e;
+      // Click marker for user input preview
+      let clickMarker = null;
 
-        // Update form fields
-        setLatLngFields(latlng);
+      // Map click behavior
+      map.on("click", (e) => {
+        // Set lat/lng fields
+        setLatLngFields(e.latlng);
+        // Add or move click marker
+        if (clickMarker) map.removeLayer(clickMarker);
+        clickMarker = L.marker(e.latlng).addTo(map);
       });
 
       function resetView() {
@@ -612,56 +622,58 @@
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const name = (document.getElementById("place").value || "").trim();
-        const description = (
-          document.getElementById("desc").value || ""
-        ).trim();
-        const latitude = parseFloat(document.getElementById("lat").value);
-        const longitude = parseFloat(document.getElementById("lng").value);
-        const photoInput = document.getElementById("photo");
-        const photo =
-          photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
-        const url = (document.getElementById("url").value || "").trim();
+        const payload = {
+          name: (document.getElementById("place").value || "").trim(),
+          description: (document.getElementById("desc").value || "").trim(),
+          image: (document.getElementById("image").value || "").trim(), // URL only
+          url: (document.getElementById("url").value || "").trim(),
+          latitude: parseFloat(document.getElementById("lat").value),
+          longitude: parseFloat(document.getElementById("lng").value),
+        };
 
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        if (!Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) {
           alert("Click on the map to set Latitude/Longitude first.");
           return;
         }
 
-        const fd = new FormData();
-        fd.append("name", name);
-        fd.append("description", description);
-        fd.append("latitude", String(latitude));
-        fd.append("longitude", String(longitude));
-        if (photo) fd.append("image", photo);
-        fd.append("url", url);
-
         try {
-          const res = await fetch("/submit", { method: "POST", body: fd });
-          if (!res.ok) throw new Error(await res.text());
+          // Blind POST to Apps Script (no CORS)
+          await fetch(SHEET_API_URL, {
+            method: "POST",
+            mode: "no-cors", // <-- REQUIRED
+            body: JSON.stringify(payload),
+            headers: {
+              "Content-Type": "text/plain;charset=utf-8"
+            }
+          });
 
-          // Refresh markers
-          await loadUserInputsFromCsv();
+          // Give Google Sheets a moment to update, then reload markers
+          setTimeout(loadUserInputsFromSheet, 800);
 
-          const out = await res.json(); // { ok:true, imageFile:"...", row:{...} }
-          alert("Saved!");
+          alert("Submitted!");
+          // Optional:
+          // form.reset();
 
-          // Optional: clear form (keep lat/lng if you want)
-          // form.reset(); document.getElementById("lat").value=""; document.getElementById("lng").value="";
         } catch (err) {
-          console.error(err);
+          console.error("Submit failed:", err);
           alert("Save failed: " + err.message);
         }
       });
-
+      
+      // Clear button behavior
       document.getElementById("btnClear").addEventListener("click", () => {
         form.reset();
+        document.getElementById("lat").value = "";
+        document.getElementById("lng").value = "";
       });
 
       // Ensure the map sizes correctly if fonts/layout cause late reflow
-      window.addEventListener("load", () =>
-        setTimeout(() => map.invalidateSize(), 0)
-      );
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          map.invalidateSize();
+          loadUserInputsFromSheet();
+        }, 0);
+      });
       window.addEventListener("resize", () => map.invalidateSize());
 
       // Load nc_counties.geojson data with jQuery and add to map
@@ -689,7 +701,7 @@
               });
               this.bindTooltip(feature.properties.NAME_LOCAS + " County", {
                 permanent: false,
-                sticky: true,
+                sticky: false,
                 direction: "right",
                 className: "county-tooltip",
               }).openTooltip();
@@ -723,7 +735,7 @@
               });
               this.bindTooltip(feature.properties.REGION, {
                 permanent: false,
-                sticky: true,
+                sticky: false,
                 direction: "right",
                 className: "region-tooltip",
               }).openTooltip();
@@ -741,12 +753,14 @@
           Regions: regionBorders,
           Counties: countyBorders,
         };
+        const overlays = {
+          "User Inputs": userInputsLayer,
+        };
         L.control
-          .layers(layers, null, { collapsed: false, position: "topright" })
+          .layers(layers, overlays, { collapsed: false, position: "topright" })
           .addTo(map);
       });
 
-      loadUserInputsFromCsv();
     </script>
   </body>
 </html>
