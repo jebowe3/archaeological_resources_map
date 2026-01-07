@@ -11,7 +11,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <!-- Load jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+  <!-- Load PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
@@ -499,6 +500,8 @@
 
     // Google Sheet API URL
     const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyxlBAAus8aMU8kU6L8db_WmBb73-CLaaC1miDCisikoK7kAXekS93gaN08Eoyg5mK4/exec";
+    // Published CSV URL for "user_inputs" sheet
+    const PUBLISHED_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTA-4Z6e7vHpirRLmqjjdttCmuoqPrq2oFFOzM05_EHhGJpGEY8opCEC6Tt0BfbIp8qTi9c5O0PlZyc/pub?gid=0&single=true&output=csv";
 
     // Image proxying function (using weserv.nl) to reduce image size and improve loading
     function proxiedThumb(url, w = 480) {
@@ -507,7 +510,7 @@
 
       // weserv expects the URL without protocol or with encoded; this works well for most https URLs.
       return `https://images.weserv.nl/?url=${encodeURIComponent(u)}&w=${w}&fit=inside&we`;
-    }    
+    }
 
     // Marker loading logic
     function escapeHtml(str) {
@@ -522,6 +525,11 @@
     // --- incremental marker cache ---
     const markerIndex = new Map(); // id -> { marker, hash }
 
+    // State for refresh logic
+    let lastValidRowCount = 0;
+    let refreshRetryTimer = null;
+    let loadRun = 0; // prevents out-of-order refreshes from clobbering each other
+
     function buildPopup(row) {
       const name = row.name || "";
       const desc = row.description || "";
@@ -533,80 +541,79 @@
       if (name) popup += `<div style="font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>`;
       if (desc) popup += `<div style="opacity:.85;margin-bottom:8px;">${escapeHtml(desc)}</div>`;
       if (url) popup += `<div style="margin-bottom:8px;">
-    <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open link</a>
-  </div>`;
-      if (img) popup += `<img
-    src="${escapeHtml(proxiedThumb(img, 480))}"
-    loading="lazy"
-    decoding="async"
-    style="display:block;width:auto;max-width:240px;border-radius:12px;" />`;
+        <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open link</a>
+      </div>`;
+      if (img) popup += `
+        <div style="width:240px;aspect-ratio:3/2;overflow:hidden;border-radius:12px;">
+          <img src="${escapeHtml(proxiedThumb(img, 480))}"
+              loading="lazy" decoding="async"
+              style="width:100%;height:100%;object-fit:cover;display:block;" />
+        </div>`;
 
       popup += `</div>`;
       return popup;
     }
 
     function rowHash(row) {
-      // hash the fields that should trigger marker/popup update
       return JSON.stringify({
-        name: row.name || "",
-        description: row.description || "",
-        image: row.image || "",
-        url: row.url || "",
+        name: (row.name || ""),
+        description: (row.description || ""),
+        image: (row.image || ""),
+        url: (row.url || ""),
         latitude: Number(row.latitude),
         longitude: Number(row.longitude),
       });
     }
 
-    function fetchJsonp(url, timeoutMs = 15000) {
-      return new Promise((resolve, reject) => {
-        const cbName = "__jsonp_cb_" + Math.random().toString(36).slice(2);
-        const script = document.createElement("script");
+    async function loadUserInputsFromSheet({ cacheBust = true } = {}) {
+      const myRun = ++loadRun;
 
-        const hasCallback = /[?&]callback=/.test(url);
-        const sep = url.includes("?") ? "&" : "?";
-        const fullUrl = hasCallback ? url : `${url}${sep}callback=${cbName}`;
+      const url = cacheBust
+        ? `${PUBLISHED_CSV_URL}&ts=${Date.now()}`
+        : PUBLISHED_CSV_URL;
 
-        let done = false;
-        const cleanup = () => {
-          if (script.parentNode) script.parentNode.removeChild(script);
-          delete window[cbName];
-        };
-
-        const timer = setTimeout(() => {
-          if (done) return;
-          done = true;
-          cleanup();
-          reject(new Error("JSONP timeout"));
-        }, timeoutMs);
-
-        window[cbName] = (data) => {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          cleanup();
-          resolve(data);
-        };
-
-        script.onerror = () => {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          cleanup();
-          reject(new Error("JSONP script load error"));
-        };
-
-        script.src = fullUrl;
-        document.head.appendChild(script);
-      });
-    }
-
-    async function loadUserInputsFromSheet() {
       try {
-        const j = await fetchJsonp(`${SHEET_API_URL}?limit=2000&ts=${Date.now()}`);
-        if (!j.ok) throw new Error(j.error || "Unknown server error");
+        // Fetch the CSV
+        const res = await fetch(url, {
+          cache: "no-store",
+          credentials: "omit",   // <-- KEY: don’t send Google cookies
+          redirect: "follow",
+        });
 
-        const data = Array.isArray(j.data) ? j.data : [];
+        if (!res.ok) throw new Error(`CSV fetch failed: HTTP ${res.status}`);
+
+        const csvText = await res.text();
+
+        const head = csvText.slice(0, 200).toLowerCase();
+
+        // If Google returns an HTML interstitial, don’t apply it.
+        if (head.includes("<!doctype html") || head.includes("<html") || head.includes("accounts.google.com")) {
+          console.warn("Non-CSV response from Google (HTML interstitial). Retrying…", csvText.slice(0, 200));
+
+          // Retry once quickly with a fresh cache-bust
+          await new Promise(r => setTimeout(r, 400));
+          return loadUserInputsFromSheet({ cacheBust: true });
+        }
+
+        const results = Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+        });
+
+        // If another refresh started after us, abort applying this one
+        if (myRun !== loadRun) return { ok: false, skipped: true };
+
+        // If Papa reports parse errors, treat as partial/bad load
+        if (results.errors && results.errors.length) {
+          console.warn("CSV parse errors:", results.errors);
+          return { ok: false, partial: true };
+        }
+
+        const data = Array.isArray(results.data) ? results.data : [];
+
+        // Build set of valid rows (has id + valid coords)
         const seen = new Set();
+        let validRows = 0;
 
         for (const row of data) {
           const id = String(row.id || "").trim();
@@ -616,6 +623,7 @@
           const lng = Number(row.longitude);
           if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
 
+          validRows++;
           seen.add(id);
 
           const h = rowHash(row);
@@ -629,10 +637,7 @@
               autoPan: true,
               autoPanPadding: [20, 20],
             });
-            markerIndex.set(id, {
-              marker: m,
-              hash: h
-            });
+            markerIndex.set(id, { marker: m, hash: h });
           } else if (existing.hash !== h) {
             existing.marker.setLatLng([lat, lng]);
             existing.marker.setPopupContent(buildPopup(row));
@@ -640,33 +645,52 @@
           }
         }
 
-        for (const [id, entry] of markerIndex) {
-          if (!seen.has(id)) {
-            userInputsLayer.removeLayer(entry.marker);
-            markerIndex.delete(id);
+        // ----- IMPORTANT PART -----
+        // Only delete if this load looks "complete enough"
+        // If validRows dropped compared to last successful load, skip deletions and retry.
+        const looksPartial = lastValidRowCount > 0 && validRows < lastValidRowCount;
+
+        if (!looksPartial) {
+          for (const [id, entry] of markerIndex) {
+            // Don't delete optimistic tmp markers here
+            if (String(id).startsWith("tmp_")) continue;
+
+            if (!seen.has(id)) {
+              userInputsLayer.removeLayer(entry.marker);
+              markerIndex.delete(id);
+            }
           }
+          lastValidRowCount = validRows;
+        } else {
+          console.warn(
+            `Partial CSV read suspected: validRows=${validRows} < lastValidRowCount=${lastValidRowCount}. Skipping deletions and retrying...`
+          );
+
+          // Schedule a quick retry (debounced)
+          if (refreshRetryTimer) clearTimeout(refreshRetryTimer);
+          refreshRetryTimer = setTimeout(() => {
+            loadUserInputsFromSheet({ cacheBust: true }).catch(console.warn);
+          }, 500);
         }
+
+        return { ok: true, validRows, looksPartial };
       } catch (err) {
         console.error("Load points failed:", err);
+
+        // On failure, DO NOT delete anything. Just keep what you have.
+        return { ok: false, error: err };
       }
-    }    
+    }
 
-    async function ensureLatestPointVisible(tries = 8) {
-      const beforeIds = new Set(markerIndex.keys());
-      const beforeCount = markerIndex.size;
-
+    async function ensureLatestPointVisible(newId, tries = 10) {
       for (let i = 0; i < tries; i++) {
-        await loadUserInputsFromSheet();
+        await loadUserInputsFromSheet({
+          cacheBust: true
+        });
 
-        // If count increases, we're done (new point added)
-        if (markerIndex.size > beforeCount) return true;
+        if (newId && markerIndex.has(String(newId))) return true;
 
-        // Or if we have any id that wasn't there before
-        for (const id of markerIndex.keys()) {
-          if (!beforeIds.has(id)) return true;
-        }
-
-        await new Promise(r => setTimeout(r, 300 * (i + 1)));
+        await new Promise(r => setTimeout(r, 200 * (i + 1)));
       }
       return false;
     }
@@ -691,6 +715,9 @@
       document.getElementById("lng").value = latlng.lng.toFixed(6);
     }
 
+    // Initial load of user inputs
+    loadUserInputsFromSheet({ cacheBust: true });
+
     // Click marker for user input preview
     let clickMarker = null;
 
@@ -707,6 +734,37 @@
       map.fitBounds(northCarolinaBounds, {
         animate: true
       });
+    }
+
+    // --- Optimistic marker addition ---
+    function addOptimisticMarker(payload) {
+      const tmpId = "tmp_" + Date.now();
+
+      const optimisticRow = {
+        ...payload,
+        id: tmpId
+      };
+
+      // (optional) don’t insert duplicates if user double-clicks fast
+      if (markerIndex.has(tmpId)) return tmpId;
+
+      const m = L.marker([payload.latitude, payload.longitude]).addTo(userInputsLayer);
+      m.bindPopup(buildPopup(optimisticRow), {
+        maxWidth: 1000,
+        minWidth: 0,
+        autoPan: true,
+        autoPanPadding: [20, 20],
+      });
+
+      markerIndex.set(tmpId, {
+        marker: m,
+        hash: rowHash(optimisticRow)
+      });
+
+      // optional: show instantly
+      // m.openPopup();
+
+      return tmpId;
     }
 
     document
@@ -737,8 +795,10 @@
       }
 
       try {
+        
         submitBtn.textContent = "Submitting…";
-        // Fire-and-forget POST (no CORS readback)
+
+        // 1) POST (fire-and-forget; avoid CORS by using no-cors)
         await fetch(`${SHEET_API_URL}?ts=${Date.now()}`, {
           method: "POST",
           mode: "no-cors",
@@ -746,12 +806,14 @@
           body: JSON.stringify(payload),
         });
 
-        // Poll until the new row appears
-        await ensureLatestPointVisible();
+        // 2) optimistic marker immediately (uses a tmp id)
+        addOptimisticMarker(payload);
 
+        // 3) reconcile by reloading CSV (cache-bust so you see the new row sooner)
+        loadUserInputsFromSheet({ cacheBust: true }).catch(console.warn);
+
+        // 4) Continue with your existing UX (alert + reset)
         alert("Submitted!");
-
-        // Cleanup UI
         form.reset();
         document.getElementById("lat").value = "";
         document.getElementById("lng").value = "";
@@ -793,9 +855,9 @@
     window.addEventListener("load", () => {
       setTimeout(() => {
         map.invalidateSize();
-        loadUserInputsFromSheet();
       }, 0);
     });
+
     window.addEventListener("resize", () => map.invalidateSize());
 
     // Load nc_counties.geojson data with jQuery and add to map
