@@ -169,6 +169,48 @@
         font-size: 12px;
       }
 
+      /* Segmented toggle in header */
+      .segmented {
+        display: inline-flex;
+        border: 1px solid var(--stroke);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .seg-btn {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .seg-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+      }
+
+      .seg-btn.is-active {
+        background: linear-gradient(
+          135deg,
+          rgba(124, 58, 237, 0.95),
+          rgba(34, 211, 238, 0.85)
+        );
+        color: rgba(255, 255, 255, 0.95);
+      }
+
+      /* Two-panel panes */
+      .pane {
+        display: none;
+      }
+
+      .pane.is-active {
+        display: block;
+      }
+
       .btn {
         border: 1px solid var(--stroke);
         background: rgba(255, 255, 255, 0.06);
@@ -387,6 +429,29 @@
             ></span>
             Ready
           </div>
+
+          <!-- NEW: panel toggle -->
+          <div class="segmented" role="tablist" aria-label="Panel selector">
+            <button
+              class="seg-btn is-active"
+              id="btnPanelInputs"
+              type="button"
+              role="tab"
+              aria-selected="true"
+            >
+              Inputs
+            </button>
+            <button
+              class="seg-btn"
+              id="btnPanelFilters"
+              type="button"
+              role="tab"
+              aria-selected="false"
+            >
+              Filters
+            </button>
+          </div>
+
           <button class="btn" id="btnResetView" type="button">
             Reset View
           </button>
@@ -395,96 +460,130 @@
 
       <main class="main">
         <aside class="panel">
-          <h2>Inputs</h2>
-          <p>
-            Use this panel for filters, layer toggles, search, or query
-            parameters.
-          </p>
+          <!-- PANE 1: Inputs -->
+          <div id="paneInputs" class="pane is-active">
+            <h2>Inputs</h2>
+            <p>Use this panel to add new markers and information to the map.</p>
 
-          <form id="controls">
-            <div class="field">
-              <label for="place">Name / Label</label>
-              <input
-                id="place"
-                name="place"
-                type="text"
-                placeholder="e.g., 'American Historical Society'"
-              />
-            </div>
-
-            <div class="row">
+            <form id="controls">
               <div class="field">
-                <label for="lat">Latitude</label>
+                <label for="place">Name / Label</label>
                 <input
-                  id="lat"
-                  name="lat"
-                  type="number"
-                  step="any"
-                  placeholder="Click map…"
-                  readonly
+                  id="place"
+                  name="place"
+                  type="text"
+                  placeholder="e.g., 'American Historical Society'"
                 />
               </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="lat">Latitude</label>
+                  <input
+                    id="lat"
+                    name="lat"
+                    type="number"
+                    step="any"
+                    placeholder="Click map…"
+                    readonly
+                  />
+                </div>
+                <div class="field">
+                  <label for="lng">Longitude</label>
+                  <input
+                    id="lng"
+                    name="lng"
+                    type="number"
+                    step="any"
+                    placeholder="Click map…"
+                    readonly
+                  />
+                </div>
+              </div>
+
               <div class="field">
-                <label for="lng">Longitude</label>
+                <label for="desc">Description</label>
+                <textarea
+                  id="desc"
+                  name="desc"
+                  placeholder="Optional description..."
+                ></textarea>
+              </div>
+
+              <div class="field">
+                <label for="image">Image URL</label>
                 <input
-                  id="lng"
-                  name="lng"
-                  type="number"
-                  step="any"
-                  placeholder="Click map…"
-                  readonly
+                  id="image"
+                  name="image"
+                  type="url"
+                  placeholder="https://example.com/photo.jpg"
+                />
+                <img
+                  id="imagePreview"
+                  style="
+                    display: none;
+                    width: 100%;
+                    border-radius: 12px;
+                    margin-top: 10px;
+                  "
                 />
               </div>
+
+              <div class="field">
+                <label for="url">URL</label>
+                <input
+                  id="url"
+                  name="url"
+                  type="url"
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div class="actions">
+                <button class="btn primary" type="submit">Submit</button>
+                <button class="btn" type="button" id="btnClear">Clear</button>
+              </div>
+
+              <div class="hint">
+                Tip: Click the map to capture coordinates, then fill out the
+                details and hit <b>Submit</b>.
+              </div>
+            </form>
+          </div>
+
+          <!-- PANE 2: Filters -->
+          <div id="paneFilters" class="pane">
+            <h2>Filters</h2>
+            <p>
+              Choose a Region <b>or</b> a County (not both). Markers will filter
+              to the selected geography and the map will zoom to it.
+            </p>
+
+            <div class="field">
+              <label for="selRegion">Region</label>
+              <select id="selRegion">
+                <option value="">Select a Region…</option>
+              </select>
             </div>
 
             <div class="field">
-              <label for="desc">Description</label>
-              <textarea
-                id="desc"
-                name="desc"
-                placeholder="Optional description..."
-              ></textarea>
-            </div>
-
-            <div class="field">
-              <label for="image">Image URL</label>
-              <input
-                id="image"
-                name="image"
-                type="url"
-                placeholder="https://example.com/photo.jpg"
-              />
-              <img
-                id="imagePreview"
-                style="
-                  display: none;
-                  width: 100%;
-                  border-radius: 12px;
-                  margin-top: 10px;
-                "
-              />
-            </div>
-
-            <div class="field">
-              <label for="url">URL</label>
-              <input
-                id="url"
-                name="url"
-                type="url"
-                placeholder="https://example.com"
-              />
+              <label for="selCounty">County</label>
+              <select id="selCounty">
+                <option value="">Select a County…</option>
+              </select>
             </div>
 
             <div class="actions">
-              <button class="btn primary" type="submit">Submit</button>
-              <button class="btn" type="button" id="btnClear">Clear</button>
+              <button class="btn" type="button" id="btnClearFilters">
+                Clear Filter
+              </button>
             </div>
 
             <div class="hint">
-              Tip: Click the map to capture coordinates, then fill out the
-              details and hit <b>Submit</b>.
+              Selecting a Region will disable the County dropdown (and vice
+              versa).
             </div>
-          </form>
+          </div>
         </aside>
         <section class="map-card">
           <div id="map" role="application" aria-label="Leaflet map"></div>
@@ -510,7 +609,7 @@
         "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
         {
           attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>; <a href="https://github.com/jebowe3">Jay Bowen, GIS Developer, ITRE, NCSU</a>',
           subdomains: "abcd",
           maxZoom: 20,
         }
@@ -575,7 +674,7 @@
         showCoverageOnHover: false,
         spiderfyOnMaxZoom: true,
         disableClusteringAtZoom: 16, // tweak as desired
-        maxClusterRadius: 20,        // how close before clustering (px)
+        maxClusterRadius: 20, // how close before clustering (px)
       }).addTo(map);
 
       // Google Sheet API URL
@@ -613,6 +712,17 @@
       let lastValidRowCount = 0;
       let refreshRetryTimer = null;
       let loadRun = 0; // prevents out-of-order refreshes from clobbering each other
+
+      // --- Geography layers + features (GLOBAL refs) ---
+      let countyBorders = null;
+      let regionBorders = null;
+
+      let countyFeatures = []; // array of GeoJSON features
+      let regionFeatures = []; // array of GeoJSON features
+
+      let activeGeoFeature = null; // currently selected feature (region or county)
+      let activeGeoLayer = null; // the Leaflet layer for the selected feature (for highlight)
+      let activeGeoType = null; // "region" | "county" | null
 
       function buildPopup(row) {
         const name = row.name || "";
@@ -871,9 +981,16 @@
         return tmpId;
       }
 
+      // --- Header button behaviors ---
       document
         .getElementById("btnResetView")
         .addEventListener("click", resetView);
+      document
+        .getElementById("btnPanelInputs")
+        .addEventListener("click", () => setPane("inputs"));
+      document
+        .getElementById("btnPanelFilters")
+        .addEventListener("click", () => setPane("filters"));
 
       // --- Form behavior ---
       const form = document.getElementById("controls");
@@ -964,12 +1081,196 @@
 
       window.addEventListener("resize", () => map.invalidateSize());
 
+      function setPane(which) {
+        const paneInputs = document.getElementById("paneInputs");
+        const paneFilters = document.getElementById("paneFilters");
+        const btnInputs = document.getElementById("btnPanelInputs");
+        const btnFilters = document.getElementById("btnPanelFilters");
+
+        const showInputs = which === "inputs";
+
+        paneInputs.classList.toggle("is-active", showInputs);
+        paneFilters.classList.toggle("is-active", !showInputs);
+
+        btnInputs.classList.toggle("is-active", showInputs);
+        btnFilters.classList.toggle("is-active", !showInputs);
+
+        btnInputs.setAttribute("aria-selected", showInputs ? "true" : "false");
+        btnFilters.setAttribute(
+          "aria-selected",
+          !showInputs ? "true" : "false"
+        );
+      }
+
+      // --- Point in Polygon helpers (no extra libraries) ---
+      function pointInRing(pt, ring) {
+        // pt: [lng, lat], ring: array of [lng, lat]
+        let inside = false;
+        const x = pt[0],
+          y = pt[1];
+
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          const xi = ring[i][0],
+            yi = ring[i][1];
+          const xj = ring[j][0],
+            yj = ring[j][1];
+
+          const intersect =
+            yi > y !== yj > y &&
+            x < ((xj - xi) * (y - yi)) / (yj - yi + 0.0) + xi;
+
+          if (intersect) inside = !inside;
+        }
+        return inside;
+      }
+
+      function pointInPolygonLngLat(pt, geom) {
+        // pt: [lng, lat]
+        // geom: GeoJSON geometry Polygon or MultiPolygon
+        if (!geom) return false;
+
+        if (geom.type === "Polygon") {
+          // geom.coordinates: [ring1, ring2...]
+          // ring1 outer, others holes
+          const rings = geom.coordinates;
+          if (!rings.length) return false;
+
+          if (!pointInRing(pt, rings[0])) return false; // must be in outer ring
+          for (let k = 1; k < rings.length; k++) {
+            if (pointInRing(pt, rings[k])) return false; // inside a hole => out
+          }
+          return true;
+        }
+
+        if (geom.type === "MultiPolygon") {
+          // geom.coordinates: array of polygons
+          for (const poly of geom.coordinates) {
+            const rings = poly;
+            if (!rings.length) continue;
+
+            if (!pointInRing(pt, rings[0])) continue;
+            let inHole = false;
+            for (let k = 1; k < rings.length; k++) {
+              if (pointInRing(pt, rings[k])) {
+                inHole = true;
+                break;
+              }
+            }
+            if (!inHole) return true;
+          }
+          return false;
+        }
+
+        return false;
+      }
+
+      function applyGeoFilter(feature, whichLayer) {
+        const prevLayer = activeGeoLayer;
+        const prevType = activeGeoType;
+
+        // feature can be null => clear filter
+        activeGeoFeature = feature || null;
+
+        // Ensure the correct boundary layer is ON and the other is OFF
+        if (regionBorders && countyBorders) {
+          if (whichLayer === "region") {
+            if (!map.hasLayer(regionBorders)) map.addLayer(regionBorders);
+            if (map.hasLayer(countyBorders)) map.removeLayer(countyBorders);
+          } else if (whichLayer === "county") {
+            if (!map.hasLayer(countyBorders)) map.addLayer(countyBorders);
+            if (map.hasLayer(regionBorders)) map.removeLayer(regionBorders);
+          } else {
+            // clearing
+            // leave whatever you prefer on; I'm turning regions on as default
+            if (!map.hasLayer(regionBorders)) map.addLayer(regionBorders);
+            if (map.hasLayer(countyBorders)) map.removeLayer(countyBorders);
+          }
+        }
+
+        // Remove previous highlight (based on what was previously selected)
+        if (prevLayer) {
+          try {
+            if (prevType === "region" && regionBorders)
+              regionBorders.resetStyle(prevLayer);
+            if (prevType === "county" && countyBorders)
+              countyBorders.resetStyle(prevLayer);
+          } catch {}
+        }
+        activeGeoLayer = null;
+        activeGeoType = null;
+
+        // Highlight the selected polygon and zoom to it
+        if (feature) {
+          const parent =
+            whichLayer === "region" ? regionBorders : countyBorders;
+          if (parent) {
+            parent.eachLayer((lyr) => {
+              if (lyr.feature === feature) {
+                activeGeoLayer = lyr;
+                activeGeoType = whichLayer; // "region" or "county"
+                lyr.setStyle({ weight: 3, opacity: 1, fillOpacity: 0.0 });
+                map.fitBounds(lyr.getBounds(), { padding: [20, 20] });
+              }
+            });
+          }
+        } else {
+          // cleared filter => reset view if you want
+          map.fitBounds(northCarolinaBounds, { animate: true });
+        }
+
+        // Filter markers by geometry
+        // IMPORTANT: markerIndex entries must include marker + lat/lng
+        for (const [id, entry] of markerIndex) {
+          const m = entry.marker;
+          if (!m) continue;
+
+          // keep tmp optimistic markers visible unless you want them filtered too
+          // if (String(id).startsWith("tmp_")) continue;
+
+          const ll = m.getLatLng();
+          const pt = [ll.lng, ll.lat];
+
+          const keep = !feature
+            ? true
+            : pointInPolygonLngLat(pt, feature.geometry);
+
+          if (keep) {
+            if (!userInputsLayer.hasLayer(m)) userInputsLayer.addLayer(m);
+          } else {
+            if (userInputsLayer.hasLayer(m)) userInputsLayer.removeLayer(m);
+          }
+        }
+      }
+
+      function fillSelect(selectEl, values, placeholder) {
+        selectEl.innerHTML = "";
+        const opt0 = document.createElement("option");
+        opt0.value = "";
+        opt0.textContent = placeholder;
+        selectEl.appendChild(opt0);
+
+        for (const v of values) {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          selectEl.appendChild(opt);
+        }
+      }
+
       // Load nc_counties.geojson data with jQuery and add to map
       $.when(
         $.getJSON("layers/nc_counties.geojson"),
         $.getJSON("layers/nc_regions.geojson")
       ).done(function (counties, regions) {
-        const countyBorders = L.geoJSON(counties[0], {
+        const countiesGeo = counties[0];
+        const regionsGeo = regions[0];
+
+        // store features for dropdowns
+        countyFeatures = (countiesGeo.features || []).slice();
+        regionFeatures = (regionsGeo.features || []).slice();
+
+        // Build county borders layer (but DO NOT add yet; default is regions)
+        countyBorders = L.geoJSON(countiesGeo, {
           style: function (feature) {
             return {
               color: "#6fa8dc",
@@ -979,8 +1280,7 @@
             };
           },
           onEachFeature: function (feature, layer) {
-            // On mouseover, highlight the county and show a tooltip with its name
-            layer.on("mouseover", function (e) {
+            layer.on("mouseover", function () {
               this.setStyle({
                 color: "#6fa8dc",
                 weight: 2,
@@ -994,17 +1294,32 @@
                 className: "county-tooltip",
               }).openTooltip();
             });
-            // On mouseout, reset the style and close the tooltip
-            layer.on("mouseout", function (e) {
+
+            layer.on("mouseout", function () {
               countyBorders.resetStyle(this);
               this.closeTooltip();
+            });
+
+            // click to select filter
+            layer.on("click", function () {
+              const name = feature.properties.NAME_LOCAS || "";
+              const selCounty = document.getElementById("selCounty");
+              const selRegion = document.getElementById("selRegion");
+
+              selCounty.value = name;
+              selRegion.value = "";
+              selRegion.disabled = true;
+              selCounty.disabled = false;
+
+              applyGeoFilter(feature, "county");
+              setPane("filters");
             });
           },
         });
 
-        // Add region borders
-        const regionBorders = L.geoJSON(regions[0], {
-          style: function (feature) {
+        // Build region borders layer (default ON)
+        regionBorders = L.geoJSON(regionsGeo, {
+          style: function () {
             return {
               color: "#000000",
               weight: 1,
@@ -1013,8 +1328,7 @@
             };
           },
           onEachFeature: function (feature, layer) {
-            // On mouseover, highlight the region and show a tooltip with its name
-            layer.on("mouseover", function (e) {
+            layer.on("mouseover", function () {
               this.setStyle({
                 color: "#000000",
                 weight: 2,
@@ -1028,15 +1342,30 @@
                 className: "region-tooltip",
               }).openTooltip();
             });
-            // On mouseout, reset the style and close the tooltip
-            layer.on("mouseout", function (e) {
+
+            layer.on("mouseout", function () {
               regionBorders.resetStyle(this);
               this.closeTooltip();
+            });
+
+            // click to select filter
+            layer.on("click", function () {
+              const name = feature.properties.REGION || "";
+              const selCounty = document.getElementById("selCounty");
+              const selRegion = document.getElementById("selRegion");
+
+              selRegion.value = name;
+              selCounty.value = "";
+              selCounty.disabled = true;
+              selRegion.disabled = false;
+
+              applyGeoFilter(feature, "region");
+              setPane("filters");
             });
           },
         }).addTo(map);
 
-        // Add a radio button control to toggle layers
+        // Layer control
         const layers = {
           Regions: regionBorders,
           Counties: countyBorders,
@@ -1050,6 +1379,83 @@
             position: "topright",
           })
           .addTo(map);
+
+        // Populate dropdowns
+        const regionNames = regionFeatures
+          .map((f) => String(f.properties?.REGION || "").trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+
+        const countyNames = countyFeatures
+          .map((f) => String(f.properties?.NAME_LOCAS || "").trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+
+        const selRegion = document.getElementById("selRegion");
+        const selCounty = document.getElementById("selCounty");
+
+        fillSelect(selRegion, regionNames, "Select a Region…");
+        fillSelect(selCounty, countyNames, "Select a County…");
+
+        // Dropdown behavior (mutual exclusion + filter)
+        selRegion.addEventListener("change", () => {
+          const v = selRegion.value;
+          if (!v) {
+            selCounty.disabled = false;
+            applyGeoFilter(null, "clear");
+            return;
+          }
+
+          selCounty.value = "";
+          selCounty.disabled = true;
+
+          const feature = regionFeatures.find(
+            (f) => String(f.properties?.REGION || "").trim() === v
+          );
+          if (feature) applyGeoFilter(feature, "region");
+        });
+
+        selCounty.addEventListener("change", () => {
+          const v = selCounty.value;
+          if (!v) {
+            selRegion.disabled = false;
+            applyGeoFilter(null, "clear");
+            return;
+          }
+
+          selRegion.value = "";
+          selRegion.disabled = true;
+
+          const feature = countyFeatures.find(
+            (f) => String(f.properties?.NAME_LOCAS || "").trim() === v
+          );
+          if (feature) applyGeoFilter(feature, "county");
+        });
+
+        // Clear button
+        document
+          .getElementById("btnClearFilters")
+          .addEventListener("click", () => {
+            selRegion.value = "";
+            selCounty.value = "";
+            selRegion.disabled = false;
+            selCounty.disabled = false;
+
+            // de-highlight whatever was selected (region or county)
+            if (activeGeoLayer && activeGeoType) {
+              try {
+                if (activeGeoType === "region" && regionBorders)
+                  regionBorders.resetStyle(activeGeoLayer);
+                if (activeGeoType === "county" && countyBorders)
+                  countyBorders.resetStyle(activeGeoLayer);
+              } catch {}
+            }
+            activeGeoLayer = null;
+            activeGeoType = null;
+            activeGeoFeature = null;
+
+            applyGeoFilter(null, "clear");
+          });
       });
     </script>
   </body>
