@@ -1,835 +1,882 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Leaflet Splash Layout</title>
 
-    <!-- Leaflet -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
-    />
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-      crossorigin=""
-    ></script>
-    <!-- Load jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leaflet Splash Layout</title>
 
-    <style>
-      :root {
-        --bg0: #070a12;
-        --bg1: rgba(255, 255, 255, 0.06);
-        --bg2: rgba(255, 255, 255, 0.1);
-        --stroke: rgba(255, 255, 255, 0.14);
-        --text: rgba(255, 255, 255, 0.92);
-        --muted: rgba(255, 255, 255, 0.65);
-        --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-        --radius-xl: 22px;
-        --radius-lg: 16px;
-        --radius-md: 12px;
-        --accent: #7c3aed; /* purple */
-        --accent2: #22d3ee; /* cyan */
-      }
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Load jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-      * {
-        box-sizing: border-box;
-      }
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-          Helvetica, Arial;
-        color: var(--text);
-        background: radial-gradient(
-            1200px 700px at 20% 10%,
-            rgba(124, 58, 237, 0.25),
-            transparent 55%
-          ),
-          radial-gradient(
-            1000px 600px at 80% 30%,
-            rgba(34, 211, 238, 0.18),
-            transparent 55%
-          ),
-          linear-gradient(180deg, #050711 0%, #070a12 60%, #060812 100%);
-      }
 
-      /* Full-page shell */
-      .app {
-        height: 100%;
-        display: grid;
-        grid-template-rows: 10vh 1fr; /* header is top 10% */
-        gap: 18px;
-        padding: 18px;
-      }
+  <style>
+    :root {
+      --bg0: #070a12;
+      --bg1: rgba(255, 255, 255, 0.06);
+      --bg2: rgba(255, 255, 255, 0.1);
+      --stroke: rgba(255, 255, 255, 0.14);
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.65);
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      --radius-xl: 22px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --accent: #7c3aed;
+      /* purple */
+      --accent2: #22d3ee;
+      /* cyan */
+    }
 
-      /* Header bar */
-      .header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 18px;
-        border-radius: var(--radius-xl);
-        background: linear-gradient(
-          135deg,
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+        Helvetica, Arial;
+      color: var(--text);
+      background: radial-gradient(1200px 700px at 20% 10%,
+          rgba(124, 58, 237, 0.25),
+          transparent 55%),
+        radial-gradient(1000px 600px at 80% 30%,
+          rgba(34, 211, 238, 0.18),
+          transparent 55%),
+        linear-gradient(180deg, #050711 0%, #070a12 60%, #060812 100%);
+    }
+
+    /* Full-page shell */
+    .app {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 10vh 1fr;
+      /* header is top 10% */
+      gap: 18px;
+      padding: 18px;
+    }
+
+    /* Header bar */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(135deg,
           rgba(255, 255, 255, 0.1),
-          rgba(255, 255, 255, 0.04)
-        );
-        border: 1px solid var(--stroke);
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(14px);
-      }
+          rgba(255, 255, 255, 0.04));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
 
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
-      }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
 
-      .logo {
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, var(--accent), var(--accent2));
-        box-shadow: 0 10px 30px rgba(124, 58, 237, 0.25);
-        position: relative;
-        flex: 0 0 auto;
-      }
-      .logo:after {
-        content: "";
-        position: absolute;
-        inset: 9px;
-        border-radius: 10px;
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-      }
+    .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.25);
+      position: relative;
+      flex: 0 0 auto;
+    }
 
-      .title-wrap {
-        min-width: 0;
-      }
-      .title {
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: 0.2px;
-        margin: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .subtitle {
-        margin: 2px 0 0 0;
-        font-size: 13px;
-        color: var(--muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+    .logo:after {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
 
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: 0 0 auto;
-      }
+    .title-wrap {
+      min-width: 0;
+    }
 
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid var(--stroke);
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--muted);
-        font-size: 12px;
-      }
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-      .btn {
-        border: 1px solid var(--stroke);
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--text);
-        padding: 10px 12px;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: transform 0.08s ease, background 0.15s ease,
-          border-color 0.15s ease;
-      }
-      .btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.22);
-      }
-      .btn:active {
-        transform: translateY(1px);
-      }
+    .subtitle {
+      margin: 2px 0 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-      /* Main split layout */
-      .main {
-        display: grid;
-        grid-template-columns: 25% 75%;
-        gap: 18px;
-        min-height: 0; /* allows children to size properly */
-      }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
 
-      /* Left form panel */
-      .panel {
-        border-radius: var(--radius-xl);
-        background: linear-gradient(
-          180deg,
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .btn {
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s ease,
+        border-color 0.15s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    /* Main split layout */
+    .main {
+      display: grid;
+      grid-template-columns: 25% 75%;
+      gap: 18px;
+      min-height: 0;
+      /* allows children to size properly */
+    }
+
+    /* Left form panel */
+    .panel {
+      border-radius: var(--radius-xl);
+      background: linear-gradient(180deg,
           rgba(255, 255, 255, 0.08),
-          rgba(255, 255, 255, 0.04)
-        );
-        border: 1px solid var(--stroke);
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(14px);
-        padding: 16px;
-        min-height: 0;
-        overflow: auto;
-      }
+          rgba(255, 255, 255, 0.04));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      padding: 16px;
+      min-height: 0;
+      overflow: auto;
+    }
 
-      .panel h2 {
-        margin: 0 0 6px 0;
-        font-size: 14px;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.78);
-      }
-      .panel p {
-        margin: 0 0 14px 0;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.4;
-      }
+    .panel h2 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.78);
+    }
 
-      .field {
-        display: grid;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
+    .panel p {
+      margin: 0 0 14px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
 
-      /* instead of label { ... } */
-      .panel label {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.75);
-      }
+    .field {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
 
-      /* instead of input, select, textarea { ... } */
-      .panel input,
-      .panel select,
-      .panel textarea {
-        width: 100%;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(0, 0, 0, 0.2);
-        color: var(--text);
-        padding: 10px 12px;
-        outline: none;
-      }
+    /* instead of label { ... } */
+    .panel label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.75);
+    }
 
-      input:focus,
-      select:focus,
-      textarea:focus {
-        border-color: rgba(124, 58, 237, 0.65);
-        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
-      }
-      textarea {
-        resize: vertical;
-        min-height: 88px;
-      }
+    /* instead of input, select, textarea { ... } */
+    .panel input,
+    .panel select,
+    .panel textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
 
-      .row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(124, 58, 237, 0.65);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
+    }
 
-      .primary {
-        background: linear-gradient(
-          135deg,
+    textarea {
+      resize: vertical;
+      min-height: 88px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .primary {
+      background: linear-gradient(135deg,
           rgba(124, 58, 237, 0.95),
-          rgba(34, 211, 238, 0.85)
-        );
-        border: 1px solid rgba(255, 255, 255, 0.2);
+          rgba(34, 211, 238, 0.85));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .hint {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      line-height: 1.4;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Map card */
+    .map-card {
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      /* keeps map corners rounded */
+      min-height: 0;
+      position: relative;
+    }
+
+    /* Leaflet div must have explicit size */
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+
+    .leaflet-control-layers {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(10px);
+      border-radius: 14px;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .leaflet-control-layers label {
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .leaflet-control-layers-separator {
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* Responsive: stack on narrow screens */
+    @media (max-width: 980px) {
+      .app {
+        grid-template-rows: auto 1fr;
       }
 
-      .actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
+      .main {
+        grid-template-columns: 1fr;
       }
 
-      .hint {
-        margin-top: 14px;
-        padding: 10px 12px;
-        border-radius: 14px;
-        border: 1px dashed rgba(255, 255, 255, 0.18);
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 12px;
-        line-height: 1.4;
-        background: rgba(255, 255, 255, 0.03);
-      }
-
-      /* Map card */
       .map-card {
-        border-radius: var(--radius-xl);
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid var(--stroke);
-        box-shadow: var(--shadow);
-        overflow: hidden; /* keeps map corners rounded */
-        min-height: 0;
-        position: relative;
+        min-height: 52vh;
       }
+    }
 
-      /* Leaflet div must have explicit size */
-      #map {
-        height: 100%;
-        width: 100%;
-      }
+    /* Prevent browser focus rectangle around clicked SVG features */
+    .leaflet-interactive:focus,
+    .leaflet-interactive:focus-visible {
+      outline: none !important;
+    }
 
-      .leaflet-control-layers {
-        background: rgba(0, 0, 0, 0.55);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        backdrop-filter: blur(10px);
-        border-radius: 14px;
-        color: rgba(255, 255, 255, 0.88);
-      }
+    .leaflet-popup-content {
+      margin: 0 !important;
+      width: auto !important;
+    }
+  </style>
+</head>
 
-      .leaflet-control-layers label {
-        color: rgba(255, 255, 255, 0.88);
-      }
-
-      .leaflet-control-layers-separator {
-        border-top: 1px solid rgba(255, 255, 255, 0.18);
-      }
-
-      /* Responsive: stack on narrow screens */
-      @media (max-width: 980px) {
-        .app {
-          grid-template-rows: auto 1fr;
-        }
-        .main {
-          grid-template-columns: 1fr;
-        }
-        .map-card {
-          min-height: 52vh;
-        }
-      }
-
-      /* Prevent browser focus rectangle around clicked SVG features */
-      .leaflet-interactive:focus,
-      .leaflet-interactive:focus-visible {
-        outline: none !important;
-      }
-
-      .leaflet-popup-content {
-        margin: 0 !important;
-        width: auto !important;
-      }
-
-    </style>
-  </head>
-
-  <body>
-    <div class="app">
-      <header class="header">
-        <div class="brand">
-          <div class="logo" aria-hidden="true"></div>
-          <div class="title-wrap">
-            <p class="title">Archaeological Map</p>
-            <p class="subtitle">
-              Leaflet basemap + input panel (splash layout)
-            </p>
-          </div>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title-wrap">
+          <p class="title">Archaeological Map</p>
+          <p class="subtitle">
+            Leaflet basemap + input panel (splash layout)
+          </p>
         </div>
+      </div>
 
-        <div class="header-actions">
-          <div class="pill" title="Status">
-            <span
-              style="
+      <div class="header-actions">
+        <div class="pill" title="Status">
+          <span style="
                 display: inline-block;
                 width: 8px;
                 height: 8px;
                 border-radius: 999px;
                 background: rgba(34, 211, 238, 0.9);
                 box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
-              "
-            ></span>
-            Ready
-          </div>
-          <button class="btn" id="btnResetView" type="button">
-            Reset View
-          </button>
+              "></span>
+          Ready
         </div>
-      </header>
+        <button class="btn" id="btnResetView" type="button">
+          Reset View
+        </button>
+      </div>
+    </header>
 
-      <main class="main">
-        <aside class="panel">
-          <h2>Inputs</h2>
-          <p>
-            Use this panel for filters, layer toggles, search, or query
-            parameters.
-          </p>
+    <main class="main">
+      <aside class="panel">
+        <h2>Inputs</h2>
+        <p>
+          Use this panel for filters, layer toggles, search, or query
+          parameters.
+        </p>
 
-          <form id="controls">
+        <form id="controls">
+          <div class="field">
+            <label for="place">Name / Label</label>
+            <input id="place" name="place" type="text" placeholder="e.g., 'American Historical Society'" />
+          </div>
+
+          <div class="row">
             <div class="field">
-              <label for="place">Name / Label</label>
-              <input
-                id="place"
-                name="place"
-                type="text"
-                placeholder="e.g., 'American Historical Society'"
-              />
+              <label for="lat">Latitude</label>
+              <input id="lat" name="lat" type="number" step="any" placeholder="Click map…" readonly />
             </div>
-
-            <div class="row">
-              <div class="field">
-                <label for="lat">Latitude</label>
-                <input
-                  id="lat"
-                  name="lat"
-                  type="number"
-                  step="any"
-                  placeholder="Click map…"
-                  readonly
-                />
-              </div>
-              <div class="field">
-                <label for="lng">Longitude</label>
-                <input
-                  id="lng"
-                  name="lng"
-                  type="number"
-                  step="any"
-                  placeholder="Click map…"
-                  readonly
-                />
-              </div>
-            </div>
-
             <div class="field">
-              <label for="desc">Description</label>
-              <textarea
-                id="desc"
-                name="desc"
-                placeholder="Optional description..."
-              ></textarea>
+              <label for="lng">Longitude</label>
+              <input id="lng" name="lng" type="number" step="any" placeholder="Click map…" readonly />
             </div>
+          </div>
 
-            <div class="field">
-              <label for="image">Image URL</label>
-              <input
-                id="image"
-                name="image"
-                type="url"
-                placeholder="https://example.com/photo.jpg"
-              />
-              <img id="imagePreview" style="display:none;width:100%;border-radius:12px;margin-top:10px;" />
-            </div>
+          <div class="field">
+            <label for="desc">Description</label>
+            <textarea id="desc" name="desc" placeholder="Optional description..."></textarea>
+          </div>
 
-            <div class="field">
-              <label for="url">URL</label>
-              <input
-                id="url"
-                name="url"
-                type="url"
-                placeholder="https://example.com"
-              />
-            </div>
+          <div class="field">
+            <label for="image">Image URL</label>
+            <input id="image" name="image" type="url" placeholder="https://example.com/photo.jpg" />
+            <img id="imagePreview" style="display:none;width:100%;border-radius:12px;margin-top:10px;" />
+          </div>
 
-            <div class="actions">
-              <button class="btn primary" type="submit">Submit</button>
-              <button class="btn" type="button" id="btnClear">Clear</button>
-            </div>
+          <div class="field">
+            <label for="url">URL</label>
+            <input id="url" name="url" type="url" placeholder="https://example.com" />
+          </div>
 
-            <div class="hint">
-              Tip: Click the map to capture coordinates, then fill out the
-              details and hit <b>Submit</b>.
-            </div>
-          </form>
-        </aside>
-        <section class="map-card">
-          <div id="map" role="application" aria-label="Leaflet map"></div>
-        </section>
-      </main>
-    </div>
+          <div class="actions">
+            <button class="btn primary" type="submit">Submit</button>
+            <button class="btn" type="button" id="btnClear">Clear</button>
+          </div>
 
-    <script>
-      // Define North Carolina bounds
-      const northCarolinaBounds = [
-        [33.84, -84.32], // Southwest
-        [36.59, -75.46], // Northeast
-      ];
+          <div class="hint">
+            Tip: Click the map to capture coordinates, then fill out the
+            details and hit <b>Submit</b>.
+          </div>
+        </form>
+      </aside>
+      <section class="map-card">
+        <div id="map" role="application" aria-label="Leaflet map"></div>
+      </section>
+    </main>
+  </div>
 
-      // Set the initial view to the North Carolina bounds above
-      const map = L.map("map", { zoomControl: true }).fitBounds(
-        northCarolinaBounds
-      );
+  <script>
+    // Define North Carolina bounds
+    const northCarolinaBounds = [
+      [33.84, -84.32], // Southwest
+      [36.59, -75.46], // Northeast
+    ];
 
-      // Basemap (Carto Voyager)
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-        {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-          subdomains: "abcd",
-          maxZoom: 20,
-        }
-      ).addTo(map);
+    // Set the initial view to the North Carolina bounds above
+    const map = L.map("map", {
+      zoomControl: true,
+      preferCanvas: true
+    }).fitBounds(northCarolinaBounds);
 
-      // Popup image load handling
-      map.on("popupopen", (ev) => {
-        const popup = ev.popup;
-        const el = popup.getElement();
-        if (!el) return;
+    // Basemap (Carto Voyager)
+    L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: "abcd",
+        maxZoom: 20,
+      }
+    ).addTo(map);
 
-        const imgs = el.querySelectorAll("img");
-        if (!imgs.length) {
-          // Still good to update once in case fonts/layout shift
-          setTimeout(() => popup.update(), 0);
-          return;
-        }
+    // Popup image load handling
+    map.on("popupopen", (ev) => {
+      const popup = ev.popup;
+      const el = popup.getElement();
+      if (!el) return;
 
-        let pending = 0;
+      const imgs = el.querySelectorAll("img");
+      if (!imgs.length) {
+        // Still good to update once in case fonts/layout shift
+        setTimeout(() => popup.update(), 0);
+        return;
+      }
 
-        imgs.forEach((img) => {
-          // If already loaded (cached), nothing to wait for
-          if (img.complete) return;
+      let pending = 0;
 
-          pending++;
-          img.addEventListener(
-            "load",
-            () => {
-              pending--;
-              if (pending === 0) {
-                popup.update();                 // re-anchor to marker
-                map.panInside(popup.getLatLng(), { padding: [20, 20] }); // optional
-              }
-            },
-            { once: true }
-          );
+      imgs.forEach((img) => {
+        // If already loaded (cached), nothing to wait for
+        if (img.complete) return;
 
-          img.addEventListener(
-            "error",
-            () => {
-              pending--;
-              if (pending === 0) {
-                popup.update();
-              }
-            },
-            { once: true }
-          );
-        });
+        pending++;
+        img.addEventListener(
+          "load",
+          () => {
+            pending--;
+            if (pending === 0) {
+              popup.update(); // re-anchor to marker
+              map.panInside(popup.getLatLng(), {
+                padding: [20, 20]
+              }); // optional
+            }
+          }, {
+            once: true
+          }
+        );
 
-        // If all images were already complete, still update once
-        if (pending === 0) setTimeout(() => popup.update(), 0);
+        img.addEventListener(
+          "error",
+          () => {
+            pending--;
+            if (pending === 0) {
+              popup.update();
+            }
+          }, {
+            once: true
+          }
+        );
       });
 
-      // Layer for user inputs
-      const userInputsLayer = L.layerGroup().addTo(map);
+      // If all images were already complete, still update once
+      if (pending === 0) setTimeout(() => popup.update(), 0);
+    });
 
-      // Google Sheet API URL
-      const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyxlBAAus8aMU8kU6L8db_WmBb73-CLaaC1miDCisikoK7kAXekS93gaN08Eoyg5mK4/exec";
+    // Layer for user inputs
+    const userInputsLayer = L.layerGroup().addTo(map);
 
-      // Published Google Sheet
-      const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTA-4Z6e7vHpirRLmqjjdttCmuoqPrq2oFFOzM05_EHhGJpGEY8opCEC6Tt0BfbIp8qTi9c5O0PlZyc/pub?gid=0&single=true&output=csv";
+    // Google Sheet API URL
+    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyxlBAAus8aMU8kU6L8db_WmBb73-CLaaC1miDCisikoK7kAXekS93gaN08Eoyg5mK4/exec";
 
-      // Marker loading logic
-      function escapeHtml(str) {
-        return String(str || "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
+    // Marker loading logic
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
 
-      function parseCsv(text) {
-        const rows = [];
-        let row = [];
-        let cur = "";
-        let inQuotes = false;
+    // --- incremental marker cache ---
+    const markerIndex = new Map(); // id -> { marker, hash }
 
-        for (let i = 0; i < text.length; i++) {
-          const ch = text[i];
-          const next = text[i + 1];
+    function buildPopup(row) {
+      const name = row.name || "";
+      const desc = row.description || "";
+      const img = row.image || "";
+      const url = row.url || "";
 
-          if (ch === '"' && inQuotes && next === '"') {
-            cur += '"';
-            i++;
-          } else if (ch === '"') {
-            inQuotes = !inQuotes;
-          } else if (ch === "," && !inQuotes) {
-            row.push(cur);
-            cur = "";
-          } else if ((ch === "\n" || ch === "\r") && !inQuotes) {
-            if (ch === "\r" && next === "\n") i++;
-            row.push(cur);
-            if (row.some(v => v.trim() !== "")) rows.push(row);
-            row = [];
-            cur = "";
-          } else {
-            cur += ch;
-          }
-        }
+      let popup = `<div style="display:inline-block;padding:12px 10px;">`;
 
-        if (cur.length || row.length) {
-          row.push(cur);
-          if (row.some(v => v.trim() !== "")) rows.push(row);
-        }
+      if (name) popup += `<div style="font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>`;
+      if (desc) popup += `<div style="opacity:.85;margin-bottom:8px;">${escapeHtml(desc)}</div>`;
+      if (url) popup += `<div style="margin-bottom:8px;">
+    <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open link</a>
+  </div>`;
+      if (img) popup += `<img
+    src="${escapeHtml(img)}"
+    loading="lazy"
+    decoding="async"
+    style="display:block;width:auto;max-width:240px;border-radius:12px;" />`;
 
-        return rows;
-      }
+      popup += `</div>`;
+      return popup;
+    }
 
-      async function loadUserInputsFromSheet() {
-        userInputsLayer.clearLayers();
+    function rowHash(row) {
+      // hash the fields that should trigger marker/popup update
+      return JSON.stringify({
+        name: row.name || "",
+        description: row.description || "",
+        image: row.image || "",
+        url: row.url || "",
+        latitude: Number(row.latitude),
+        longitude: Number(row.longitude),
+      });
+    }
 
-        const res = await fetch(`${SHEET_CSV_URL}&ts=${Date.now()}`); // cache-bust
-        if (!res.ok) {
-          console.warn("Could not load published CSV:", res.status);
-          return;
-        }
+    function fetchJsonp(url, timeoutMs = 15000) {
+      return new Promise((resolve, reject) => {
+        const cbName = "__jsonp_cb_" + Math.random().toString(36).slice(2);
+        const script = document.createElement("script");
 
-        const text = await res.text();
-        const rows = parseCsv(text);
-        if (rows.length < 2) return;
+        const hasCallback = /[?&]callback=/.test(url);
+        const sep = url.includes("?") ? "&" : "?";
+        const fullUrl = hasCallback ? url : `${url}${sep}callback=${cbName}`;
 
-        const header = rows[0].map(h => (h || "").trim().toLowerCase());
-        const idx = (c) => header.indexOf(c);
+        let done = false;
+        const cleanup = () => {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          delete window[cbName];
+        };
 
-        const iName = idx("name");
-        const iDesc = idx("description");
-        const iImg  = idx("image");
-        const iUrl  = idx("url");
-        const iLat  = idx("latitude");
-        const iLng  = idx("longitude");
+        const timer = setTimeout(() => {
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error("JSONP timeout"));
+        }, timeoutMs);
 
-        for (let r = 1; r < rows.length; r++) {
-          const cols = rows[r];
+        window[cbName] = (data) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(data);
+        };
 
-          const lat = parseFloat(cols[iLat]);
-          const lng = parseFloat(cols[iLng]);
+        script.onerror = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          cleanup();
+          reject(new Error("JSONP script load error"));
+        };
+
+        script.src = fullUrl;
+        document.head.appendChild(script);
+      });
+    }
+
+    async function loadUserInputsFromSheet() {
+      try {
+        const j = await fetchJsonp(`${SHEET_API_URL}?limit=2000&ts=${Date.now()}`);
+        if (!j.ok) throw new Error(j.error || "Unknown server error");
+
+        const data = Array.isArray(j.data) ? j.data : [];
+        const seen = new Set();
+
+        for (const row of data) {
+          const id = String(row.id || "").trim();
+          if (!id) continue;
+
+          const lat = Number(row.latitude);
+          const lng = Number(row.longitude);
           if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
 
-          const name = iName >= 0 ? cols[iName] || "" : "";
-          const desc = iDesc >= 0 ? cols[iDesc] || "" : "";
-          const img  = iImg  >= 0 ? cols[iImg]  || "" : "";
-          const url  = iUrl  >= 0 ? cols[iUrl]  || "" : "";
+          seen.add(id);
 
-          let popup = `<div style="
-            display: inline-block;
-            padding: 12px 10px;   /* 10px left + right past image */
-          ">`;
+          const h = rowHash(row);
+          const existing = markerIndex.get(id);
 
-          if (name) popup += `<div style="font-weight:700;margin-bottom:4px;">${escapeHtml(name)}</div>`;
-          if (desc) popup += `<div style="opacity:.85;margin-bottom:8px;">${escapeHtml(desc)}</div>`;
-          if (url)  popup += `<div style="margin-bottom:8px;"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open link</a></div>`;
-          if (img)  popup += `<img src="${escapeHtml(img)}"
-            style="display:block;width:auto;max-width:240px;border-radius:12px;" />`;
-
-          popup += `</div>`;
-
-          const m = L.marker([lat, lng]).addTo(userInputsLayer);
-          if (popup) {
-            m.bindPopup(popup, {
+          if (!existing) {
+            const m = L.marker([lat, lng]).addTo(userInputsLayer);
+            m.bindPopup(buildPopup(row), {
               maxWidth: 1000,
               minWidth: 0,
               autoPan: true,
               autoPanPadding: [20, 20],
             });
+            markerIndex.set(id, {
+              marker: m,
+              hash: h
+            });
+          } else if (existing.hash !== h) {
+            existing.marker.setLatLng([lat, lng]);
+            existing.marker.setPopupContent(buildPopup(row));
+            existing.hash = h;
           }
-
         }
+
+        for (const [id, entry] of markerIndex) {
+          if (!seen.has(id)) {
+            userInputsLayer.removeLayer(entry.marker);
+            markerIndex.delete(id);
+          }
+        }
+      } catch (err) {
+        console.error("Load points failed:", err);
+      }
+    }    
+
+    async function ensureLatestPointVisible(tries = 8) {
+      const beforeIds = new Set(markerIndex.keys());
+      const beforeCount = markerIndex.size;
+
+      for (let i = 0; i < tries; i++) {
+        await loadUserInputsFromSheet();
+
+        // If count increases, we're done (new point added)
+        if (markerIndex.size > beforeCount) return true;
+
+        // Or if we have any id that wasn't there before
+        for (const id of markerIndex.keys()) {
+          if (!beforeIds.has(id)) return true;
+        }
+
+        await new Promise(r => setTimeout(r, 300 * (i + 1)));
+      }
+      return false;
+    }
+
+    const imageInput = document.getElementById("image");
+    const imagePreview = document.getElementById("imagePreview");
+
+    imageInput.addEventListener("input", () => {
+      const u = (imageInput.value || "").trim();
+      if (!u) {
+        imagePreview.style.display = "none";
+        imagePreview.src = "";
+        return;
+      }
+      imagePreview.src = u;
+      imagePreview.style.display = "block";
+    });
+
+    // --- Click on map to add latitude and longitude ---
+    function setLatLngFields(latlng) {
+      document.getElementById("lat").value = latlng.lat.toFixed(6);
+      document.getElementById("lng").value = latlng.lng.toFixed(6);
+    }
+
+    // Click marker for user input preview
+    let clickMarker = null;
+
+    // Map click behavior
+    map.on("click", (e) => {
+      // Set lat/lng fields
+      setLatLngFields(e.latlng);
+      // Add or move click marker
+      if (clickMarker) map.removeLayer(clickMarker);
+      clickMarker = L.marker(e.latlng).addTo(map);
+    });
+
+    function resetView() {
+      map.fitBounds(northCarolinaBounds, {
+        animate: true
+      });
+    }
+
+    document
+      .getElementById("btnResetView")
+      .addEventListener("click", resetView);
+
+    // --- Form behavior ---
+    const form = document.getElementById("controls");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+
+      const payload = {
+        name: (document.getElementById("place").value || "").trim(),
+        description: (document.getElementById("desc").value || "").trim(),
+        image: (document.getElementById("image").value || "").trim(),
+        url: (document.getElementById("url").value || "").trim(),
+        latitude: parseFloat(document.getElementById("lat").value),
+        longitude: parseFloat(document.getElementById("lng").value),
+      };
+
+      if (!Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) {
+        alert("Click on the map to set Latitude/Longitude first.");
+        if (submitBtn) submitBtn.disabled = false;
+        return;
       }
 
-      const imageInput = document.getElementById("image");
-      const imagePreview = document.getElementById("imagePreview");
+      try {
+        submitBtn.textContent = "Submitting…";
+        // Fire-and-forget POST (no CORS readback)
+        await fetch(`${SHEET_API_URL}?ts=${Date.now()}`, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload),
+        });
 
-      imageInput.addEventListener("input", () => {
-        const u = (imageInput.value || "").trim();
-        if (!u) {
-          imagePreview.style.display = "none";
-          imagePreview.src = "";
-          return;
-        }
-        imagePreview.src = u;
-        imagePreview.style.display = "block";
-      });
+        // Poll until the new row appears
+        await ensureLatestPointVisible();
 
-      // --- Click on map to add latitude and longitude ---
-      function setLatLngFields(latlng) {
-        document.getElementById("lat").value = latlng.lat.toFixed(6);
-        document.getElementById("lng").value = latlng.lng.toFixed(6);
-      }
+        alert("Submitted!");
 
-      // Click marker for user input preview
-      let clickMarker = null;
-
-      // Map click behavior
-      map.on("click", (e) => {
-        // Set lat/lng fields
-        setLatLngFields(e.latlng);
-        // Add or move click marker
-        if (clickMarker) map.removeLayer(clickMarker);
-        clickMarker = L.marker(e.latlng).addTo(map);
-      });
-
-      function resetView() {
-        map.fitBounds(northCarolinaBounds, { animate: true });
-      }
-
-      document
-        .getElementById("btnResetView")
-        .addEventListener("click", resetView);
-
-      // --- Form behavior ---
-      const form = document.getElementById("controls");
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const payload = {
-          name: (document.getElementById("place").value || "").trim(),
-          description: (document.getElementById("desc").value || "").trim(),
-          image: (document.getElementById("image").value || "").trim(), // URL only
-          url: (document.getElementById("url").value || "").trim(),
-          latitude: parseFloat(document.getElementById("lat").value),
-          longitude: parseFloat(document.getElementById("lng").value),
-        };
-
-        if (!Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) {
-          alert("Click on the map to set Latitude/Longitude first.");
-          return;
-        }
-
-        try {
-          // Blind POST to Apps Script (no CORS)
-          await fetch(SHEET_API_URL, {
-            method: "POST",
-            mode: "no-cors", // <-- REQUIRED
-            body: JSON.stringify(payload),
-            headers: {
-              "Content-Type": "text/plain;charset=utf-8"
-            }
-          });
-
-          // Give Google Sheets a moment to update, then reload markers
-          setTimeout(loadUserInputsFromSheet, 800);
-
-          alert("Submitted!");
-          // Optional:
-          // form.reset();
-
-        } catch (err) {
-          console.error("Submit failed:", err);
-          alert("Save failed: " + err.message);
-        }
-      });
-      
-      // Clear button behavior
-      document.getElementById("btnClear").addEventListener("click", () => {
+        // Cleanup UI
         form.reset();
         document.getElementById("lat").value = "";
         document.getElementById("lng").value = "";
-      });
 
-      // Ensure the map sizes correctly if fonts/layout cause late reflow
-      window.addEventListener("load", () => {
-        setTimeout(() => {
-          map.invalidateSize();
-          loadUserInputsFromSheet();
-        }, 0);
-      });
-      window.addEventListener("resize", () => map.invalidateSize());
+        if (clickMarker) {
+          map.removeLayer(clickMarker);
+          clickMarker = null;
+        }
 
-      // Load nc_counties.geojson data with jQuery and add to map
-      $.when(
-        $.getJSON("layers/nc_counties.geojson"),
-        $.getJSON("layers/nc_regions.geojson")
-      ).done(function (counties, regions) {
-        const countyBorders = L.geoJSON(counties[0], {
-          style: function (feature) {
-            return {
+        imagePreview.style.display = "none";
+        imagePreview.src = "";
+
+      } catch (err) {
+        console.error("Submit failed:", err);
+        alert("Save failed: " + err.message);
+
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        submitBtn.textContent = "Submit";
+      }
+    });
+
+    // Clear button behavior
+    document.getElementById("btnClear").addEventListener("click", () => {
+      form.reset();
+      document.getElementById("lat").value = "";
+      document.getElementById("lng").value = "";
+
+      if (clickMarker) {
+        map.removeLayer(clickMarker);
+        clickMarker = null;
+      }
+
+      imagePreview.style.display = "none";
+      imagePreview.src = "";
+    });
+
+    // Ensure the map sizes correctly if fonts/layout cause late reflow
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        map.invalidateSize();
+        loadUserInputsFromSheet();
+      }, 0);
+    });
+    window.addEventListener("resize", () => map.invalidateSize());
+
+    // Load nc_counties.geojson data with jQuery and add to map
+    $.when(
+      $.getJSON("layers/nc_counties.geojson"),
+      $.getJSON("layers/nc_regions.geojson")
+    ).done(function(counties, regions) {
+      const countyBorders = L.geoJSON(counties[0], {
+        style: function(feature) {
+          return {
+            color: "#6fa8dc",
+            weight: 1,
+            opacity: 0.5,
+            fillOpacity: 0.0,
+          };
+        },
+        onEachFeature: function(feature, layer) {
+          // On mouseover, highlight the county and show a tooltip with its name
+          layer.on("mouseover", function(e) {
+            this.setStyle({
               color: "#6fa8dc",
-              weight: 1,
-              opacity: 0.5,
+              weight: 2,
+              opacity: 1,
               fillOpacity: 0.0,
-            };
-          },
-          onEachFeature: function (feature, layer) {
-            // On mouseover, highlight the county and show a tooltip with its name
-            layer.on("mouseover", function (e) {
-              this.setStyle({
-                color: "#6fa8dc",
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.0,
-              });
-              this.bindTooltip(feature.properties.NAME_LOCAS + " County", {
-                permanent: false,
-                sticky: false,
-                direction: "right",
-                className: "county-tooltip",
-              }).openTooltip();
             });
-            // On mouseout, reset the style and close the tooltip
-            layer.on("mouseout", function (e) {
-              countyBorders.resetStyle(this);
-              this.closeTooltip();
-            });
-          },
-        });
-
-        // Add region borders
-        const regionBorders = L.geoJSON(regions[0], {
-          style: function (feature) {
-            return {
-              color: "#000000",
-              weight: 1,
-              opacity: 0.5,
-              fillOpacity: 0.0,
-            };
-          },
-          onEachFeature: function (feature, layer) {
-            // On mouseover, highlight the region and show a tooltip with its name
-            layer.on("mouseover", function (e) {
-              this.setStyle({
-                color: "#000000",
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.0,
-              });
-              this.bindTooltip(feature.properties.REGION, {
-                permanent: false,
-                sticky: false,
-                direction: "right",
-                className: "region-tooltip",
-              }).openTooltip();
-            });
-            // On mouseout, reset the style and close the tooltip
-            layer.on("mouseout", function (e) {
-              regionBorders.resetStyle(this);
-              this.closeTooltip();
-            });
-          },
-        }).addTo(map);
-
-        // Add a radio button control to toggle layers
-        const layers = {
-          Regions: regionBorders,
-          Counties: countyBorders,
-        };
-        const overlays = {
-          "User Inputs": userInputsLayer,
-        };
-        L.control
-          .layers(layers, overlays, { collapsed: false, position: "topright" })
-          .addTo(map);
+            this.bindTooltip(feature.properties.NAME_LOCAS + " County", {
+              permanent: false,
+              sticky: false,
+              direction: "right",
+              className: "county-tooltip",
+            }).openTooltip();
+          });
+          // On mouseout, reset the style and close the tooltip
+          layer.on("mouseout", function(e) {
+            countyBorders.resetStyle(this);
+            this.closeTooltip();
+          });
+        },
       });
 
-    </script>
-  </body>
+      // Add region borders
+      const regionBorders = L.geoJSON(regions[0], {
+        style: function(feature) {
+          return {
+            color: "#000000",
+            weight: 1,
+            opacity: 0.5,
+            fillOpacity: 0.0,
+          };
+        },
+        onEachFeature: function(feature, layer) {
+          // On mouseover, highlight the region and show a tooltip with its name
+          layer.on("mouseover", function(e) {
+            this.setStyle({
+              color: "#000000",
+              weight: 2,
+              opacity: 1,
+              fillOpacity: 0.0,
+            });
+            this.bindTooltip(feature.properties.REGION, {
+              permanent: false,
+              sticky: false,
+              direction: "right",
+              className: "region-tooltip",
+            }).openTooltip();
+          });
+          // On mouseout, reset the style and close the tooltip
+          layer.on("mouseout", function(e) {
+            regionBorders.resetStyle(this);
+            this.closeTooltip();
+          });
+        },
+      }).addTo(map);
+
+      // Add a radio button control to toggle layers
+      const layers = {
+        Regions: regionBorders,
+        Counties: countyBorders,
+      };
+      const overlays = {
+        "User Inputs": userInputsLayer,
+      };
+      L.control
+        .layers(layers, overlays, {
+          collapsed: false,
+          position: "topright"
+        })
+        .addTo(map);
+    });
+  </script>
+</body>
+
 </html>
