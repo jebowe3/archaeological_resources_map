@@ -500,6 +500,15 @@
     // Google Sheet API URL
     const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyxlBAAus8aMU8kU6L8db_WmBb73-CLaaC1miDCisikoK7kAXekS93gaN08Eoyg5mK4/exec";
 
+    // Image proxying function (using weserv.nl) to reduce image size and improve loading
+    function proxiedThumb(url, w = 480) {
+      const u = (url || "").trim();
+      if (!u) return "";
+
+      // weserv expects the URL without protocol or with encoded; this works well for most https URLs.
+      return `https://images.weserv.nl/?url=${encodeURIComponent(u)}&w=${w}&fit=inside&we`;
+    }    
+
     // Marker loading logic
     function escapeHtml(str) {
       return String(str || "")
@@ -527,7 +536,7 @@
     <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Open link</a>
   </div>`;
       if (img) popup += `<img
-    src="${escapeHtml(img)}"
+    src="${escapeHtml(proxiedThumb(img, 480))}"
     loading="lazy"
     decoding="async"
     style="display:block;width:auto;max-width:240px;border-radius:12px;" />`;
