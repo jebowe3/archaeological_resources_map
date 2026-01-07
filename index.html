@@ -399,6 +399,17 @@
         margin: 0 !important;
         width: auto !important;
       }
+
+      /* Marker hover effects */
+      .leaflet-marker-icon {
+        transition: filter 0.15s ease, transform 0.15s ease;
+      }
+
+      .leaflet-marker-icon:hover {
+        filter: hue-rotate(20deg) brightness(1.2);
+        transform: scale(1.1);
+      }
+
     </style>
   </head>
 
