@@ -409,7 +409,6 @@
         filter: hue-rotate(20deg) brightness(1.2);
         transform: scale(1.1);
       }
-
     </style>
   </head>
 
@@ -420,9 +419,7 @@
           <div class="logo" aria-hidden="true"></div>
           <div class="title-wrap">
             <p class="title">Archaeological Resources Map</p>
-            <p class="subtitle">
-              Crowd-sourced locations in North Carolina
-            </p>
+            <p class="subtitle">Crowd-sourced locations in North Carolina</p>
           </div>
         </div>
 
@@ -444,20 +441,21 @@
           <!-- NEW: panel toggle -->
           <div class="segmented" role="tablist" aria-label="Panel selector">
             <button
-              class="seg-btn is-active"
+              class="seg-btn"
               id="btnPanelInputs"
               type="button"
               role="tab"
-              aria-selected="true"
+              aria-selected="false"
             >
               Inputs
             </button>
+
             <button
-              class="seg-btn"
+              class="seg-btn is-active"
               id="btnPanelFilters"
               type="button"
               role="tab"
-              aria-selected="false"
+              aria-selected="true"
             >
               Filters
             </button>
@@ -472,7 +470,7 @@
       <main class="main">
         <aside class="panel">
           <!-- PANE 1: Inputs -->
-          <div id="paneInputs" class="pane is-active">
+          <div id="paneInputs" class="pane">
             <h2>Inputs</h2>
             <p>Use this panel to add new markers and information to the map.</p>
 
@@ -563,7 +561,7 @@
           </div>
 
           <!-- PANE 2: Filters -->
-          <div id="paneFilters" class="pane">
+          <div id="paneFilters" class="pane is-active">
             <h2>Filters</h2>
             <p>
               Choose a Region <b>or</b> a County (not both). Markers will filter
@@ -944,11 +942,16 @@
       // Click marker for user input preview
       let clickMarker = null;
 
+      // Track active pane so map clicks only work in Inputs
+      let activePane = "inputs"; // "inputs" / "filters"
+
       // Map click behavior
       map.on("click", (e) => {
-        // Set lat/lng fields
+        // Only place a click marker / set coords while Inputs pane is active
+        if (activePane !== "inputs") return;
+
         setLatLngFields(e.latlng);
-        // Add or move click marker
+
         if (clickMarker) map.removeLayer(clickMarker);
         clickMarker = L.marker(e.latlng).addTo(map);
       });
@@ -1093,6 +1096,8 @@
       window.addEventListener("resize", () => map.invalidateSize());
 
       function setPane(which) {
+        activePane = which; // <-- ADD THIS
+
         const paneInputs = document.getElementById("paneInputs");
         const paneFilters = document.getElementById("paneFilters");
         const btnInputs = document.getElementById("btnPanelInputs");
@@ -1312,18 +1317,20 @@
             });
 
             // click to select filter
-            layer.on("click", function () {
+            layer.on("click", function (e) {
+              // If we're NOT in Filters pane, let the map click handler run
+              if (activePane !== "filters") return;
+
+              // In Filters pane, stop bubbling so it doesn't trigger map click
+              L.DomEvent.stop(e);
+
               const name = feature.properties.NAME_LOCAS || "";
               const selCounty = document.getElementById("selCounty");
               const selRegion = document.getElementById("selRegion");
 
               selCounty.value = name;
-              selRegion.value = "";
-              selRegion.disabled = true;
-              selCounty.disabled = false;
-
+              selRegion.value = ""; // mutual exclusion
               applyGeoFilter(feature, "county");
-              setPane("filters");
             });
           },
         });
@@ -1360,18 +1367,20 @@
             });
 
             // click to select filter
-            layer.on("click", function () {
+            layer.on("click", function (e) {
+              // If we're NOT in Filters pane, let the map click handler run
+              if (activePane !== "filters") return;
+
+              // In Filters pane, stop bubbling so it doesn't trigger map click
+              L.DomEvent.stop(e);
+
               const name = feature.properties.REGION || "";
               const selCounty = document.getElementById("selCounty");
               const selRegion = document.getElementById("selRegion");
 
               selRegion.value = name;
-              selCounty.value = "";
-              selCounty.disabled = true;
-              selRegion.disabled = false;
-
+              selCounty.value = ""; // mutual exclusion
               applyGeoFilter(feature, "region");
-              setPane("filters");
             });
           },
         }).addTo(map);
@@ -1411,14 +1420,13 @@
         // Dropdown behavior (mutual exclusion + filter)
         selRegion.addEventListener("change", () => {
           const v = selRegion.value;
+
           if (!v) {
-            selCounty.disabled = false;
             applyGeoFilter(null, "clear");
             return;
           }
 
-          selCounty.value = "";
-          selCounty.disabled = true;
+          selCounty.value = ""; // clear the other dropdown
 
           const feature = regionFeatures.find(
             (f) => String(f.properties?.REGION || "").trim() === v
@@ -1428,14 +1436,13 @@
 
         selCounty.addEventListener("change", () => {
           const v = selCounty.value;
+
           if (!v) {
-            selRegion.disabled = false;
             applyGeoFilter(null, "clear");
             return;
           }
 
-          selRegion.value = "";
-          selRegion.disabled = true;
+          selRegion.value = ""; // clear the other dropdown
 
           const feature = countyFeatures.find(
             (f) => String(f.properties?.NAME_LOCAS || "").trim() === v
@@ -1449,10 +1456,8 @@
           .addEventListener("click", () => {
             selRegion.value = "";
             selCounty.value = "";
-            selRegion.disabled = false;
-            selCounty.disabled = false;
 
-            // de-highlight whatever was selected (region or county)
+            // clear highlight state
             if (activeGeoLayer && activeGeoType) {
               try {
                 if (activeGeoType === "region" && regionBorders)
@@ -1461,12 +1466,15 @@
                   countyBorders.resetStyle(activeGeoLayer);
               } catch {}
             }
+
             activeGeoLayer = null;
             activeGeoType = null;
             activeGeoFeature = null;
 
             applyGeoFilter(null, "clear");
           });
+          // Default to Filters pane on page load
+          setPane("filters");
       });
     </script>
   </body>
